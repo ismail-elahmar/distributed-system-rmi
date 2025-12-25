@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre Panier - RentCar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* --- STYLE IDENTIQUE À L'ACCUEIL --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background-color: #f7f7f7; color: #222; }
+
+        nav {
+            background: white; padding: 15px 40px; border-bottom: 1px solid #ddd;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #ff385c; text-decoration: none; }
+        .back-link { color: #222; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* --- LAYOUT DU PANIER (2 COLONNES) --- */
+        .container {
+            max-width: 1100px; margin: 40px auto; padding: 0 20px;
+            display: flex; gap: 40px;
+        }
+
+        .cart-items-section { flex: 2; } /* Prend 2/3 de la largeur */
+        .cart-summary-section { flex: 1; } /* Prend 1/3 de la largeur */
+
+        h1 { margin-bottom: 20px; font-size: 1.8rem; }
+
+        /* --- CARTE D'ARTICLE DANS LE PANIER --- */
+        .cart-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            position: relative;
+        }
+
+        .item-image {
+            width: 150px; height: 100px;
+            border-radius: 8px; overflow: hidden;
+            flex-shrink: 0;
+        }
+        .item-image img { width: 100%; height: 100%; object-fit: cover; }
+
+        .item-details { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        .item-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .item-dates { color: #717171; font-size: 0.9rem; }
+        .item-price { font-weight: bold; font-size: 1.2rem; margin-top: 10px; }
+
+        .btn-remove {
+            position: absolute; top: 20px; right: 20px;
+            background: none; border: none; color: #717171;
+            cursor: pointer; font-size: 1.2rem;
+        }
+        .btn-remove:hover { color: #ff385c; }
+
+        /* --- RÉSUMÉ / PAIEMENT (ENCADRÉ DROITE) --- */
+        .summary-box {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 25px;
+            position: sticky; top: 100px; /* Reste visible au scroll */
+        }
+
+        .summary-row {
+            display: flex; justify-content: space-between; margin-bottom: 15px; color: #555;
+        }
+        .summary-total {
+            display: flex; justify-content: space-between;
+            margin-top: 20px; padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-weight: bold; font-size: 1.2rem; color: #222;
+        }
+
+        .btn-checkout {
+            width: 100%;
+            background-color: #ff385c; color: white;
+            border: none; padding: 15px; border-radius: 8px;
+            font-size: 1rem; font-weight: bold; cursor: pointer;
+            margin-top: 25px; transition: background 0.2s;
+        }
+        .btn-checkout:hover { background-color: #d9324e; }
+
+        /* --- EMPTY STATE (PANIER VIDE) --- */
+        .empty-msg { text-align: center; margin-top: 50px; display: none; }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .item-image { width: 100px; height: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">RentCar</a>
+        <a href="/" class="back-link"><i class="fas fa-chevron-left"></i> Continuer mes achats</a>
+    </nav>
+
+    <div class="container">
+        
+        <div class="cart-items-section">
+            <h1>Panier (<span id="count-display">0</span>)</h1>
+            
+            <div id="cart-list">
+                </div>
+
+            <div id="empty-cart" class="empty-msg">
+                <h2>Votre panier est vide 😔</h2>
+                <p>Trouvez votre prochaine voiture dès maintenant.</p>
+                <br>
+                <a href="/" style="color: #ff385c; font-weight: bold;">Retourner au catalogue</a>
+            </div>
+        </div>
+
+        <div class="cart-summary-section">
+            <div class="summary-box">
+                <h2>Détails du prix</h2>
+                <br>
+                <div class="summary-row">
+                    <span>Sous-total</span>
+                    <span id="subtotal">0 DH</span>
+                </div>
+                <div class="summary-row">
+                    <span>Frais de service</span>
+                    <span>50 DH</span>
+                </div>
+                <div class="summary-row">
+                    <span>Taxes</span>
+                    <span>Included</span>
+                </div>
+                
+                <div class="summary-total">
+                    <span>Total (par jour)</span>
+                    <span id="total-price">0 DH</span>
+                </div>
+
+                <button class="btn-checkout" onclick="passerAuPaiement()">Payer maintenant</button>
+            </div>
+        </div>
+
+    </div>
+
+     <script>
+        // 1. Récupérer le panier depuis le stockage du navigateur
+        let panier = JSON.parse(localStorage.getItem('monPanier')) || [];
+        
+        const cartList = document.getElementById('cart-list');
+        const emptyMsg = document.getElementById('empty-cart');
+        const countDisplay = document.getElementById('count-display');
+        
+        const elSubtotal = document.getElementById('subtotal');
+        const elTotal = document.getElementById('total-price');
+
+        // 2. Fonction pour afficher les articles
+        function renderCart() {
+            cartList.innerHTML = ''; // On vide la liste avant de la reconstruire
+            let sousTotal = 0;
+
+            if (panier.length === 0) {
+                // Si vide
+                emptyMsg.style.display = 'block';
+                document.querySelector('.cart-summary-section').style.display = 'none'; // Cacher le résumé
+            } else {
+                emptyMsg.style.display = 'none';
+                document.querySelector('.cart-summary-section').style.display = 'block';
+
+                panier.forEach((voiture, index) => {
+                    sousTotal += parseInt(voiture.prix);
+
+                    // Création HTML de l'article
+                    const itemHTML = `
+                        <div class="cart-item">
+                            <div class="item-image">
+                                <img src="${voiture.image}" alt="${voiture.nom}">
+                            </div>
+                            <div class="item-details">
+                                <div>
+                                    <div class="item-title">${voiture.nom}</div>
+                                    <div class="item-dates">Dates : 12 Oct - 15 Oct (Exemple)</div>
+                                </div>
+                                <div class="item-price">${voiture.prix} DH / jour</div>
+                            </div>
+                            <button class="btn-remove" onclick="supprimerArticle(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    cartList.innerHTML += itemHTML;
+                });
+            }
+
+            // Mise à jour des totaux
+            countDisplay.innerText = panier.length;
+            elSubtotal.innerText = sousTotal + " DH";
+            elTotal.innerText = (sousTotal + 50) + " DH"; // +50 DH de frais
+        }
+
+        // 3. Fonction pour supprimer un article
+        function supprimerArticle(index) {
+            panier.splice(index, 1); // Enlève l'élément du tableau
+            localStorage.setItem('monPanier', JSON.stringify(panier)); // Sauvegarde le nouveau tableau
+            renderCart(); // Rafraichit l'affichage
+        }
+
+        // 4. Simulation Paiement
+        function passerAuPaiement() {
+            if(confirm("Confirmer la réservation et procéder au paiement ?")) {
+                alert("Redirection vers la passerelle de paiement...");
+                // Ici, vous redirigeriez vers Stripe, PayPal, ou votre page de formulaire CB
+                // window.location.href = "paiement.html"; 
+            }
+        }
+
+        // Lancer l'affichage au chargement de la page
+        renderCart();
+
+    </script>
+</body>
+</html> 

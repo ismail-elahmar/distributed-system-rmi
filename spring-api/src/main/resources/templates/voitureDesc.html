@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Détails Voiture</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background: #f7f7f7;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .car-img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+        .price {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff385c;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #ff385c;
+            color: white;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #d62d50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <img th:src="${voiture.image_url}" class="car-img">
+
+    <h1 th:text="${voiture.marque} + ' ' + ${voiture.modele}"></h1>
+
+    <p class="info">
+        <strong>Carburant :</strong>
+        <span th:text="${voiture.carburant}"></span>
+    </p>
+
+    <!-- <p class="info">
+        <strong>Transmission :</strong>
+        <span th:text="${voiture.transmission}"></span>
+    </p> -->
+
+    <p class="info">
+        <strong>Disponibilité :</strong>
+        <span th:text="${voiture.disponibilite ? 'Disponible' : 'Non disponible'}"></span>
+    </p>
+
+    <p class="price" th:text="${voiture.prix_par_jour} + ' DH / jour'"></p>
+
+    <a th:href="@{'/reservation/' + ${voiture.voiture_id}}" class="btn">
+        Réserver cette voiture
+    </a>
+</div>
+
+</body>
+</html>
